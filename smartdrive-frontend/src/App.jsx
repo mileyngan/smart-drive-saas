@@ -2,7 +2,7 @@ import './App.css';
 import React from 'react';
 import {Routes, Route } from "react-router-dom";
 import ProtectedRoute from './components/ProtectedRoute';
-import AdminDash from "./pages/AdminDash";
+import SchoolAdminDashboard from "./pages/SchoolAdminDashboard";
 import Home from "./pages/Home";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
@@ -48,7 +48,7 @@ function App() {
                 <Route path='/smartdrive-frontend/appointment' element={<Appointments/>} />
                 <Route path='/smartdrive-frontend/admin' element={
                   <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminDash />
+                    <SchoolAdminDashboard />
                   </ProtectedRoute>
                 }/>
                 <Route path='/smartdrive-frontend/instructor' element={<InstructorDash/>} />

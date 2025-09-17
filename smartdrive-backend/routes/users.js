@@ -1,68 +1,41 @@
+// backend/routes/users.js
 const express = require('express');
 const { supabase } = require('../lib/supabaseClient');
-const { authenticateToken } = require('../authMiddleware');
 const router = express.Router();
+const { authenticateToken, checkRole } = require('../authMiddleware');
 
-const generatePassword = () => {
-  return Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4).toUpperCase();
-};
-
-router.post('/create', authenticateToken, async (req, res) => {
-  const { full_name, email, phone, role } = req.body; // role: 'instructor' or 'student'
-  
+// Get all users for the school
+router.get('/', authenticateToken, checkRole('school_admin'), async (req, res) => {
   try {
-    // 1. Get school_id from logged-in admin
-    const {  profile, error: profileError } = await supabase
+    // Get school_id from authenticated school admin
+    const {  profileData, error: profileError } = await supabase
       .from('profiles')
       .select('school_id')
       .eq('id', req.user.id)
       .single();
 
-    if (profileError) throw profileError;
+    if (profileError || !profileData) {
+      return res.status(400).json({ message: 'Could not find school for admin' });
+    }
 
-    // 2. Generate password
-    const password = generatePassword();
+    const schoolId = profileData.school_id;
 
-    // 3. Create auth user
-    const {  authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (authError) throw authError;
-
-    // 4. Create profile
-    const { error: profileInsertError } = await supabase
+    // Get all users for this school
+    const { data, error } = await supabase
       .from('profiles')
-      .insert([{
-        id: authData.user.id,
-        full_name,
-        email,
-        phone,
-        role,
-        school_id: profile.school_id
-      }]);
+      .select('id, full_name, email, phone, role, license_number, bio')
+      .eq('school_id', schoolId)
+      .order('created_at', { ascending: false });
 
-    if (profileInsertError) throw profileInsertError;
+    if (error) {
+      console.error('Error fetching users:', error);
+      return res.status(400).json({ message: error.message });
+    }
 
-    // 👇 LOG CREDENTIALS FOR DEMO
-    console.log(`
-      👤 USER CREDENTIALS GENERATED
-      Name: ${full_name}
-      Role: ${role}
-      Email: ${email}
-      Password: ${password}
-      Login at: http://localhost:5173/smartdrive-frontend/login
-    `);
-
-    res.status(201).json({ 
-      message: `${role} created successfully. Credentials sent via email.`,
-      user: { email, password } 
-    });
-
-  } catch (error) {
-    console.error('User creation error:', error);
-    res.status(400).json({ error: error.message });
+    res.json(data);
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 

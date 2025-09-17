@@ -4,7 +4,7 @@ import RegisteredFooter from '../components/RegisteredFooter';
 import { FaUserGraduate, FaChalkboardTeacher, FaCalendarCheck, FaBullhorn } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
-const AdminDash = () => {
+const SchoolAdminDashboard = () => {
     const stats = [
         { icon: <FaUserGraduate />, label: 'Total Students', value: '156' },
         { icon: <FaChalkboardTeacher />, label: 'Instructors', value: '12' },
@@ -78,4 +78,4 @@ const AdminDash = () => {
     );
 };
 
-export default AdminDash;
+export default SchoolAdminDashboard;
