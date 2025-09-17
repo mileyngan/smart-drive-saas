@@ -11,8 +11,10 @@ const registerRoutes = require('./routes/register');
 app.use('/api/login', require('./routes/login'));
 
 app.use('/api/sms', smsRoutes);
-app.use('/api/register', registerRoutes);
+/*app.use('/api/register', registerRoutes);*/
 app.use('/api/profile', require('./routes/profile'));
+app.use('/api/schools', require('./routes/schools'));
+app.use('/api/users', require('./routes/users'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
