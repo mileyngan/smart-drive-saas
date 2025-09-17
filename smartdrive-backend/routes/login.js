@@ -20,12 +20,25 @@ router.post('/', async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // Send token + user info to frontend
+    // 👇👇👇 FETCH USER PROFILE (INCLUDING ROLE) 👇👇👇
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileError || !profileData) {
+      console.error('👤 Profile fetch error:', profileError);
+      return res.status(400).json({ message: 'User profile not found' });
+    }
+
+    // Send token + user info + role to frontend
     res.json({
       token: data.session.access_token,
       user: {
         id: data.user.id,
-        email: data.user.email
+        email: data.user.email,
+        role: profileData.role  // ← ✅ CRITICAL: RETURN ROLE
       }
     });
 

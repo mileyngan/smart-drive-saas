@@ -1,4 +1,3 @@
-// routes/school.js
 const express = require('express');
 const { supabase } = require('../lib/supabaseClient');
 const router = express.Router();
@@ -8,7 +7,6 @@ const router = express.Router();
 router.post('/register', async (req, res) => {
   const { name, address, phone, email, deployment, subscription } = req.body;
 
-  // Validate required fields
   if (!name || !email) {
     return res.status(400).json({ message: 'School name and email are required' });
   }
@@ -24,7 +22,7 @@ router.post('/register', async (req, res) => {
           email,
           deployment: deployment || 'cloud',
           subscription: subscription || 'basic',
-          status: 'pending' // Wait for super admin approval
+          status: 'pending'
         }
       ])
       .select();
@@ -34,7 +32,6 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: error.message });
     }
 
-    // TODO: In real app, send email to super admin
     console.log('✅ School registered, pending approval:', data[0]);
 
     res.status(201).json({
@@ -42,6 +39,34 @@ router.post('/register', async (req, res) => {
       school: data[0]
     });
 
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// @route   GET /api/school/:id
+// @desc    Get school details by ID
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const { data, error } = await supabase
+      .from('schools')
+      .select('name, address, phone, email')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching school:', error);
+      return res.status(400).json({ message: error.message });
+    }
+
+    if (!data) {
+      return res.status(404).json({ message: 'School not found' });
+    }
+
+    res.json(data);
   } catch (err) {
     console.error('Server error:', err);
     res.status(500).json({ message: 'Internal server error' });

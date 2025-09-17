@@ -1,23 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaHome, FaBook, FaQuestionCircle, FaBell, FaUser, FaSignOutAlt, FaUserCircle, FaSun, FaMoon, FaBars, FaTimes, FaRoad, FaDollarSign } from 'react-icons/fa';
 import { IoLibrary } from 'react-icons/io5';
-import { supabase } from '../supabase';
 import { useTheme } from '../context/ThemeContext';
 
 const AdminNavbar = () => {
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [schoolName, setSchoolName] = useState('Loading...');
     const { theme, toggleTheme } = useTheme();
-
-    const userName = "John Doe"; 
-
+    const navigate = useNavigate();
 
     const handleLogout = async () => {
         try {
-            await supabase.auth.signOut();
-            // Redirect to landing page or handle logout in your app
-            window.location.href = '/';
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('profile');
+            navigate('/smartdrive-frontend/login');
         } catch (error) {
             console.error('Error logging out:', error.message);
         }
@@ -33,7 +32,7 @@ const AdminNavbar = () => {
                 setShowProfileDropdown(false);
             }
             if (courseDropdownRef.current && !courseDropdownRef.current.contains(event.target)) {
-                setShowCourseDropdown(false);
+                setShowProfileDropdown(false);
             }
             if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
                 setIsMobileMenuOpen(false);
@@ -44,7 +43,6 @@ const AdminNavbar = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Close mobile menu when window is resized to desktop size
     useEffect(() => {
         const handleResize = () => {
             if (window.innerWidth >= 1024) {
@@ -54,6 +52,25 @@ const AdminNavbar = () => {
 
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        const profile = JSON.parse(localStorage.getItem('profile'));
+
+        if (token && profile && profile.school_id) {
+            fetch(`http://localhost:5000/api/school/${profile.school_id}`, {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(res => res.json())
+            .then(data => setSchoolName(data.name))
+            .catch(err => {
+                console.error('Error fetching school:', err);
+                setSchoolName('School Admin');
+            });
+        }
     }, []);
 
     const toggleMobileMenu = () => {
@@ -90,20 +107,20 @@ const AdminNavbar = () => {
                                 <div className={`w-10 h-10 rounded-full ${theme === 'dark' ? 'bg-green-900' : 'bg-green-100'} flex items-center justify-center`}>
                                     <FaUserCircle className={`text-2xl ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`} />
                                 </div>
-                                <span className={`${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} hidden md:inline`}>{userName}</span>
+                                <span className={`${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} hidden md:inline`}>{schoolName}</span>
                             </button>
 
                             {showProfileDropdown && (
                                 <div className={`absolute right-0 mt-2 w-48 ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'} rounded-md shadow-lg py-1 z-50 ring-1 ring-black ring-opacity-5`}>
                                     <Link
-                                        to="/smartdrive-frontend//student/profile"
+                                        to="/smartdrive-frontend/admin/profile"
                                         className={`flex items-center px-4 py-2 text-sm ${theme === 'dark' ? 'text-gray-200 hover:bg-gray-600' : 'text-gray-700 hover:bg-green-50'} transition-colors duration-300`}
                                     >
                                         <FaUser className="mr-2" />
                                         Profile
                                     </Link>
                                     <Link
-                                        to="/smartdrive-frontend//student/notifications"
+                                        to="/smartdrive-frontend/admin/notifications"
                                         className={`flex items-center px-4 py-2 text-sm ${theme === 'dark' ? 'text-gray-200 hover:bg-gray-600' : 'text-gray-700 hover:bg-green-50'} transition-colors duration-300`}
                                     >
                                         <FaBell className="mr-2" />
@@ -155,8 +172,6 @@ const AdminNavbar = () => {
                         <FaBell className="text-xl" />
                         <span className="ml-3">Announcements</span>
                     </Link>
-
-                    
                 </div>
             </div>
 
@@ -170,7 +185,7 @@ const AdminNavbar = () => {
                     >
                         {isMobileMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
                     </button>
-                    <div className="w-6"></div> {/* Spacer for alignment */}
+                    <div className="w-6"></div>
                 </div>
             </div>
 

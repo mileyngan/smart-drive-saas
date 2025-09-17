@@ -58,6 +58,11 @@ function App() {
     <SuperAdminDashboard />
   </ProtectedRoute>
 } />
+                <Route path='/smartdrive-frontend/admin' element={
+  <ProtectedRoute allowedRoles={['admin']}>
+    <AdminDash />
+  </ProtectedRoute>
+}/>
                 <Route path='/smartdrive-frontend/lesson' element={<Lesson />} />
                 <Route path='/smartdrive-frontend/register' element={<Register />} />
                 <Route path="/smartdrive-frontend/student/library" element={<Library />} />
