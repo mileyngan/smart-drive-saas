@@ -1,77 +1,50 @@
+// routes/school.js
 const express = require('express');
 const { supabase } = require('../lib/supabaseClient');
 const router = express.Router();
 
-// Generate random password
-const generatePassword = () => {
-  return Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4).toUpperCase();
-};
-
+// @route   POST /api/school/register
+// @desc    Register a new driving school
 router.post('/register', async (req, res) => {
-  const { name, address, phone, email, subscription = 'basic', deployment = 'cloud' } = req.body;
+  const { name, address, phone, email, deployment, subscription } = req.body;
+
+  // Validate required fields
+  if (!name || !email) {
+    return res.status(400).json({ message: 'School name and email are required' });
+  }
 
   try {
-    // 1. Create school
-    const { data: school, error: schoolError } = await supabase
+    const { data, error } = await supabase
       .from('schools')
-      .insert([{ name, address, phone, email, subscription, deployment }])
-      .select()
-      .single();
+      .insert([
+        {
+          name,
+          address: address || '',
+          phone: phone || '',
+          email,
+          deployment: deployment || 'cloud',
+          subscription: subscription || 'basic',
+          status: 'pending' // Wait for super admin approval
+        }
+      ])
+      .select();
 
-    if (schoolError) throw schoolError;
+    if (error) {
+      console.error('School registration error:', error);
+      return res.status(400).json({ message: error.message });
+    }
 
-    // 2. Generate credentials for school admin
-    const adminEmail = `admin@${name.replace(/\s+/g, '').toLowerCase()}.com`;
-    const adminPassword = generatePassword();
+    // TODO: In real app, send email to super admin
+    console.log('✅ School registered, pending approval:', data[0]);
 
-    // 3. Create auth user for school admin
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: adminEmail,
-      password: adminPassword,
+    res.status(201).json({
+      message: 'School registered successfully. Waiting for super admin approval.',
+      school: data[0]
     });
 
-    if (authError) throw authError;
-
-    // 4. Link school to owner
-    const { error: updateError } = await supabase
-      .from('schools')
-      .update({ owner_id: authData.user.id })
-      .eq('id', school.id);
-
-    if (updateError) throw updateError;
-
-    // 5. Create profile for admin
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert([{
-        id: authData.user.id,
-        full_name: `${name} Admin`,
-        email: adminEmail,
-        role: 'admin',
-        school_id: school.id,
-        phone: phone
-      }]);
-
-    if (profileError) throw profileError;
-
-    // 👇 LOG CREDENTIALS FOR DEMO (Later: send via email)
-    console.log(`
-      🎓 SCHOOL ADMIN CREDENTIALS GENERATED
-      School: ${name}
-      Email: ${adminEmail}
-      Password: ${adminPassword}
-      Login at: http://localhost:5173/smartdrive-frontend/login
-    `);
-
-    res.status(201).json({ 
-      message: 'School registered successfully. Admin credentials sent via email.',
-      school,
-      admin: { email: adminEmail, password: adminPassword }
-    });
-
-  } catch (error) {
-    console.error('School registration error:', error);
-    res.status(400).json({ error: error.message });
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 

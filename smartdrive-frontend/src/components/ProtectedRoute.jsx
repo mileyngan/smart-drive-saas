@@ -1,23 +1,43 @@
+import React, { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
+import axios from 'axios';
+
 const ProtectedRoute = ({ allowedRoles, children }) => {
-    const { session } = useAuth();
-    const [role, setRole] = useState(null);
-  
-    useEffect(() => {
-      const fetchRole = async () => {
-        const { data } = await axios.get('http://localhost:3001/api/profile', {
-          headers: { Authorization: `Bearer ${session.access_token}` }
+  const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      setRole(null);
+      setLoading(false);
+      return;
+    }
+
+    const fetchRole = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/profile', {
+          headers: { Authorization: `Bearer ${token}` }
         });
-        setRole(data.role);
-      };
-  
-      if (session) fetchRole();
-    }, [session]);
-  
-    if (!role) return <div>Loading...</div>;
-    if (!allowedRoles.includes(role)) return <Navigate to="/unauthorized" />;
-  
-    return children;
-  };
-  
+
+        setRole(response.data.role);
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+        setRole(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRole();
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+  if (!role) return <Navigate to="/smartdrive-frontend/login" />;
+  if (!allowedRoles.includes(role)) return <Navigate to="/smartdrive-frontend/unauthorized" />;
+
+  return children;
+};
+
 export default ProtectedRoute;
-  

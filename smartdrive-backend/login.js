@@ -25,7 +25,8 @@ router.post('/', async (req, res) => {
       token: data.session.access_token,
       user: {
         id: data.user.id,
-        email: data.user.email
+        email: data.user.email,
+        role: profileData.role
       }
     });
 

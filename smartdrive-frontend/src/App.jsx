@@ -28,6 +28,8 @@ import Profile from './pages/Profile';
 import Journey from './pages/Journey';
 import BookSession from './pages/BookSession';
 import AdminUsers from './pages/AdminUsers';
+import RegisterSchool from './pages/RegisterSchool';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import Checkout from "./pages/Checkout";
 
 function App() {
@@ -51,6 +53,11 @@ function App() {
                 }/>
                 <Route path='/smartdrive-frontend/instructor' element={<InstructorDash/>} />
                 <Route path='/smartdrive-frontend/student' element={<StudentDash/>} />
+                 <Route path="/smartdrive-frontend/superadmin" element={
+  <ProtectedRoute allowedRoles={['super_admin']}>
+    <SuperAdminDashboard />
+  </ProtectedRoute>
+} />
                 <Route path='/smartdrive-frontend/lesson' element={<Lesson />} />
                 <Route path='/smartdrive-frontend/register' element={<Register />} />
                 <Route path="/smartdrive-frontend/student/library" element={<Library />} />
@@ -66,6 +73,7 @@ function App() {
                 <Route path="/smartdrive-frontend/student/book-session" element={<BookSession />} />
                 <Route path="/smartdrive-frontend/admin/users" element={<AdminUsers/>} />
                 <Route path="/smartdrive-frontend/checkout" element={<Checkout />} />
+                <Route path="/smartdrive-frontend/register-school" element={<RegisterSchool />} />
                 <Route path="/smartdrive-frontend/unauthorized" element={<div>Not allowed</div>} />
               </Routes> 
             <ScrollToTopButton />

@@ -1,4 +1,3 @@
-// src/pages/Login.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -61,8 +60,7 @@ const Login = () => {
 
             const profileData = await profileResponse.json();
 
-            // 👇👇👇 CRITICAL LINE ADDED 👇👇👇
-            // 3.5 Save profile to localStorage for StudentDash.jsx
+            // 👇👇👇 CRITICAL: Save profile for StudentDash.jsx
             localStorage.setItem('profile', JSON.stringify(profileData));
 
             // 4. Redirect based on role
@@ -72,6 +70,8 @@ const Login = () => {
                 navigate('/smartdrive-frontend/student');
             } else if (profileData.role === 'instructor') {
                 navigate('/smartdrive-frontend/instructor');
+            } else if (profileData.role === 'super_admin') { // 👈 ADD THIS
+                navigate('/smartdrive-frontend/superadmin');
             } else {
                 navigate('/smartdrive-frontend/'); // fallback
             }
