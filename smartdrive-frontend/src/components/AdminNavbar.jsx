@@ -56,7 +56,13 @@ const AdminNavbar = () => {
 
     useEffect(() => {
         const token = localStorage.getItem('token');
-        const profile = JSON.parse(localStorage.getItem('profile'));
+        const profileRaw = localStorage.getItem('profile');
+        const profile = profileRaw ? JSON.parse(profileRaw) : null;
+
+        if (!profile || !profile.school_id) {
+            setSchoolName('School Admin');
+            return;
+        }
 
         if (token && profile && profile.school_id) {
             fetch(`http://localhost:5000/api/school/${profile.school_id}`, {
@@ -64,11 +70,18 @@ const AdminNavbar = () => {
                     'Authorization': 'Bearer ' + token
                 }
             })
-            .then(res => res.json())
-            .then(data => setSchoolName(data.name))
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                return res.json();
+            })
+            .then(data => {
+                setSchoolName(data.name || 'School Admin');
+            })
             .catch(err => {
                 console.error('Error fetching school:', err);
-                setSchoolName('School Admin');
+                setSchoolName('Emergence Driving School');
             });
         }
     }, []);

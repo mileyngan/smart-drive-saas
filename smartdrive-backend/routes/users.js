@@ -4,10 +4,11 @@ const { supabase } = require('../lib/supabaseClient');
 const router = express.Router();
 const { authenticateToken, checkRole } = require('../authMiddleware');
 
-// Get all users for the school
-router.get('/', authenticateToken, checkRole('school_admin'), async (req, res) => {
+// @route   GET /api/users
+// @desc    Get all users for the school (admin only)
+router.get('/', authenticateToken, checkRole('admin'), async (req, res) => {
   try {
-    // Get school_id from authenticated school admin
+    // Get school_id from authenticated admin
     const {  profileData, error: profileError } = await supabase
       .from('profiles')
       .select('school_id')

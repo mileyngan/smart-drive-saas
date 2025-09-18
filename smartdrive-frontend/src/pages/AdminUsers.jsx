@@ -20,21 +20,28 @@ const AdminUsers = () => {
     fetchUsers();
   }, []);
 
-  const fetchUsers = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const response = await fetch('http://localhost:5000/api/users', { // ← We'll create this route next
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      setUsers(data);
-    } catch (err) {
-      console.error('Error fetching users:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchUsers = async () => {
+  const token = localStorage.getItem('token');
+  try {
+    const response = await fetch('http://localhost:5000/api/users', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch users');
+    }
+
+    const data = await response.json();
+    setUsers(Array.isArray(data) ? data : []); // ← SAFEGUARD: ensure it's an array
+  } catch (err) {
+    console.error('Error fetching users:', err);
+    setMessage(`❌ ${err.message}`);
+    setUsers([]); // ← Set empty array to avoid .map() error
+  } finally {
+    setLoading(false);
+  }
+};
   const handleChange = (e) => {
     setFormData({
       ...formData,

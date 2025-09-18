@@ -54,15 +54,10 @@ function App() {
                 <Route path='/smartdrive-frontend/instructor' element={<InstructorDash/>} />
                 <Route path='/smartdrive-frontend/student' element={<StudentDash/>} />
                  <Route path="/smartdrive-frontend/superadmin" element={
-  <ProtectedRoute allowedRoles={['super_admin']}>
-    <SuperAdminDashboard />
-  </ProtectedRoute>
-} />
-                <Route path='/smartdrive-frontend/admin' element={
-  <ProtectedRoute allowedRoles={['admin']}>
-    <AdminDash />
-  </ProtectedRoute>
-}/>
+                  <ProtectedRoute allowedRoles={['super_admin']}>
+                    <SuperAdminDashboard />
+                  </ProtectedRoute>
+                } />
                 <Route path='/smartdrive-frontend/lesson' element={<Lesson />} />
                 <Route path='/smartdrive-frontend/register' element={<Register />} />
                 <Route path="/smartdrive-frontend/student/library" element={<Library />} />
