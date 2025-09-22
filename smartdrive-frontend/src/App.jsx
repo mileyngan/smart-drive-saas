@@ -12,6 +12,7 @@ import MyAppointments from "./pages/MyAppointments";
 import Appointments from "./pages/Appointments";
 import Lesson from './pages/Lesson';
 import LandingPage from './pages/LandingPage';
+import StudentProgramSelection from './pages/StudentProgramSelection';
 import Register from './pages/Register';
 import InstructorDash from './pages/InstructorDash';
 import StudentDash from './pages/StudentDash';
@@ -74,6 +75,11 @@ function App() {
                 <Route path="/smartdrive-frontend/admin/users" element={<AdminUsers/>} />
                 <Route path="/smartdrive-frontend/checkout" element={<Checkout />} />
                 <Route path="/smartdrive-frontend/register-school" element={<RegisterSchool />} />
+                <Route path="/smartdrive-frontend/student/program-selection" element={
+  <ProtectedRoute allowedRoles={['student']}>
+    <StudentProgramSelection />
+  </ProtectedRoute>
+}/>
                 <Route path="/smartdrive-frontend/unauthorized" element={<div>Not allowed</div>} />
               </Routes> 
             <ScrollToTopButton />

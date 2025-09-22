@@ -4,16 +4,35 @@ const { supabase } = require('../lib/supabaseClient');
 const router = express.Router();
 const { authenticateToken, checkRole } = require('../authMiddleware');
 
-// Get all chapters for a course
-router.get('/course/:courseId', async (req, res) => {
-  const { courseId } = req.params;
+// Get chapters by program (novice or recyclage)
+router.get('/program/:programType', authenticateToken, checkRole('admin'), async (req, res) => {
+  const { programType } = req.params;
+
+  if (!['novice', 'recyclage'].includes(programType)) {
+    return res.status(400).json({ message: 'Invalid program type' });
+  }
 
   try {
+    // Get school_id from authenticated admin
+    const {  profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('school_id')
+      .eq('id', req.user.id)
+      .single();
+
+    if (profileError || !profileData) {
+      return res.status(400).json({ message: 'Could not find school' });
+    }
+
+    const schoolId = profileData.school_id;
+
+    // Fetch chapters for this school and program
     const { data, error } = await supabase
       .from('chapters')
       .select('*')
-      .eq('course_id', courseId)
-      .order('id', { ascending: true });
+      .eq('school_id', schoolId)
+      .eq('program_type', programType)
+      .order('chapter_order', { ascending: true });
 
     if (error) {
       console.error('Error fetching chapters:', error);
@@ -21,28 +40,6 @@ router.get('/course/:courseId', async (req, res) => {
     }
 
     res.json(data);
-  } catch (err) {
-    console.error('Server error:', err);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
-
-// Create chapter (admin only)
-router.post('/', authenticateToken, checkRole('admin'), async (req, res) => {
-  const { course_id, title, video_url, content } = req.body;
-
-  try {
-    const { data, error } = await supabase
-      .from('chapters')
-      .insert([{ course_id, title, video_url, content }])
-      .select();
-
-    if (error) {
-      console.error('Error creating chapter:', error);
-      return res.status(400).json({ message: error.message });
-    }
-
-    res.status(201).json({ message: 'Chapter created', chapter: data[0] });
   } catch (err) {
     console.error('Server error:', err);
     res.status(500).json({ message: 'Internal server error' });

@@ -166,7 +166,7 @@ const AdminNavbar = () => {
                         <span className="ml-3">Users</span>
                     </Link>
 
-                    <Link to="/smartdrive-frontend/admin/courses" className="flex items-center py-3 px-1 text-white bg-gray-900 hover:bg-green-600 transition-all duration-300 ease-in-out">
+                    <Link to="/smartdrive-frontend/admin/course-management" className="flex items-center py-3 px-1 text-white bg-gray-900 hover:bg-green-600 transition-all duration-300 ease-in-out">
                         <FaBook className="text-xl" />
                         <span className="ml-3">Courses</span>
                     </Link>
