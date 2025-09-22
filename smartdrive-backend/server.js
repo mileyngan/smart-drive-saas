@@ -15,6 +15,7 @@ app.use('/api/sms', smsRoutes);
 app.use('/api/profile', require('./routes/profile'));
 app.use('/api/school', require('./routes/school'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/chapter', require('./routes/chapter'));
 app.use('/api/superadmin', require('./routes/superadmin'));
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);

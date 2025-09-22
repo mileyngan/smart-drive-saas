@@ -20,28 +20,32 @@ const AdminUsers = () => {
     fetchUsers();
   }, []);
 
-const fetchUsers = async () => {
-  const token = localStorage.getItem('token');
-  try {
-    const response = await fetch('http://localhost:5000/api/users', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+  const fetchUsers = async () => {
+    const token = localStorage.getItem('token');
+    console.log('Token:', token ? token.substring(0, 20) + '...' : 'NONE');
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch users');
+    try {
+      const response = await fetch('http://localhost:5000/api/users', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch users');
+      }
+
+      const data = await response.json();
+      setUsers(Array.isArray(data) ? data : []);
+      setMessage('');
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      setMessage(`❌ ${err.message}`);
+      setUsers([]);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const data = await response.json();
-    setUsers(Array.isArray(data) ? data : []); // ← SAFEGUARD: ensure it's an array
-  } catch (err) {
-    console.error('Error fetching users:', err);
-    setMessage(`❌ ${err.message}`);
-    setUsers([]); // ← Set empty array to avoid .map() error
-  } finally {
-    setLoading(false);
-  }
-};
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -53,7 +57,6 @@ const fetchUsers = async () => {
     e.preventDefault();
     const token = localStorage.getItem('token');
 
-    // Validate required fields
     if (!formData.full_name || !formData.email) {
       setMessage('❌ Full name and email are required');
       return;
@@ -77,7 +80,8 @@ const fetchUsers = async () => {
       const result = await response.json();
 
       if (response.ok) {
-        setMessage(`✅ ${formData.role === 'student' ? 'Student' : 'Instructor'} created successfully!`);
+        setMessage(`✅ ${formData.role === 'student' ? 'Learner' : 'Instructor'} created successfully!`);
+        alert(`Password for ${formData.email}: ${result.password}`); // 👈 SHOW PASSWORD
         setFormData({
           full_name: '',
           email: '',
@@ -87,7 +91,7 @@ const fetchUsers = async () => {
           bio: ''
         });
         setShowAddForm(false);
-        fetchUsers(); // Refresh list
+        fetchUsers();
       } else {
         setMessage(`❌ ${result.message}`);
       }
@@ -147,7 +151,7 @@ const fetchUsers = async () => {
       {showAddForm && (
         <div className="bg-white p-6 rounded-lg shadow-md mb-6">
           <h2 className="text-xl font-semibold mb-4">
-            Add New {formData.role === 'student' ? 'Student' : 'Instructor'}
+            Add New {formData.role === 'student' ? 'Learner' : 'Instructor'}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -158,7 +162,7 @@ const fetchUsers = async () => {
                 onChange={handleChange}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               >
-                <option value="student">Student (Learner)</option>
+                <option value="student">Learner (Student)</option>
                 <option value="instructor">Instructor</option>
               </select>
             </div>
@@ -230,7 +234,7 @@ const fetchUsers = async () => {
                 type="submit"
                 className="flex-1 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-colors"
               >
-                Create {formData.role === 'student' ? 'Student' : 'Instructor'}
+                Create {formData.role === 'student' ? 'Learner' : 'Instructor'}
               </button>
               <button
                 type="button"
@@ -281,7 +285,7 @@ const fetchUsers = async () => {
                       ? 'bg-blue-100 text-blue-800' 
                       : 'bg-green-100 text-green-800'
                   }`}>
-                    {user.role === 'instructor' ? 'Instructor' : 'Student'}
+                    {user.role === 'instructor' ? 'Instructor' : 'Learner'}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.phone || '-'}</td>

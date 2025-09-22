@@ -1,3 +1,4 @@
+// smartdrive-frontend/src/pages/Login.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -60,7 +61,7 @@ const Login = () => {
 
             const profileData = await profileResponse.json();
 
-            // 👇👇👇 CRITICAL: Save profile for StudentDash.jsx
+            // Save profile for StudentDash.jsx
             localStorage.setItem('profile', JSON.stringify(profileData));
 
             // 4. Redirect based on role
@@ -70,7 +71,7 @@ const Login = () => {
                 navigate('/smartdrive-frontend/student');
             } else if (profileData.role === 'instructor') {
                 navigate('/smartdrive-frontend/instructor');
-            } else if (profileData.role === 'super_admin') { // 👈 ADD THIS
+            } else if (profileData.role === 'super_admin') {
                 navigate('/smartdrive-frontend/superadmin');
             } else {
                 navigate('/smartdrive-frontend/'); // fallback

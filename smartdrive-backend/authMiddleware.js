@@ -1,4 +1,4 @@
-// authMiddleware.js
+// backend/authMiddleware.js
 const { supabase } = require('./lib/supabaseClient');
 
 function authenticateToken(req, res, next) {
@@ -18,7 +18,7 @@ function authenticateToken(req, res, next) {
         console.log("❌ No user found in auth response");
         return res.status(401).json({ message: 'Unauthorized' });
       }
-      req.user = data.user; // 👈 Set req.user = data.user
+      req.user = data.user;
       console.log("✅ User authenticated:", data.user.id);
       next();
     })
