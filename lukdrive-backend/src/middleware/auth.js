@@ -20,21 +20,24 @@ const protect = (req, res, next) => {
       // Get token from header
       token = req.headers.authorization.split(' ')[1];
 
+      // Log token for debugging (remove in production)
+      console.log('Token received:', token);
+      console.log('JWT_SECRET exists:', !!JWT_SECRET);
+
       // Verify token
       const decoded = jwt.verify(token, JWT_SECRET);
 
       // Attach user to the request
       req.user = decoded;
-      next();
+      return next(); // Add return here
     } catch (error) {
-      console.error(error);
-      res.status(401).json({ message: 'Not authorized, token failed' });
+      console.error('Token verification error:', error.message);
+      return res.status(401).json({ message: 'Not authorized, token failed' }); // Add return here
     }
   }
 
-  if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
-  }
+  // This only runs if no Authorization header was found
+  return res.status(401).json({ message: 'Not authorized, no token' }); // Add return here
 };
 
 /**
@@ -45,7 +48,7 @@ const protect = (req, res, next) => {
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ message: `User role ${req.user.role} is not authorized to access this route` });
+      return res.status(403).json({ message: `User role ${req.user?.role || 'undefined'} is not authorized to access this route` });
     }
     next();
   };

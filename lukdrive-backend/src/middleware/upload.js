@@ -31,7 +31,7 @@ const handleUpload = async (req, res) => {
 
   const file = req.file;
   const fileExtension = path.extname(file.originalname).toLowerCase();
-  const bucket = fileExtension === '.pdf' ? 'ebooks' : 'videos';
+  const bucket = fileExtension === '.pdf' ? 'ebook' : 'videos';
   const fileName = `${req.user.school_id}/${Date.now()}-${file.originalname}`;
 
   try {

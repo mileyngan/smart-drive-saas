@@ -10,7 +10,7 @@ exports.getPendingSchools = async (req, res) => {
         const { data: schools, error } = await supabase
             .from('schools')
             .select('*')
-            .eq('is_approved', false)
+            .eq('status', 'pending')
             .order('created_at', { ascending: true });
 
         if (error) throw error;
@@ -34,7 +34,7 @@ exports.approveSchool = async (req, res) => {
         const { data, error } = await supabase
             .from('schools')
             .update({
-                is_approved: true,
+                status: 'approved',
                 approval_date: new Date()
             })
             .eq('id', id)
@@ -45,8 +45,7 @@ exports.approveSchool = async (req, res) => {
             return res.status(404).json({ message: 'School not found.' });
         }
 
-        // Here you might also trigger a welcome email to the school's admin.
-        // For now, just confirm the approval.
+        // TODO: Trigger a welcome email to the school's admin.
 
         res.status(200).json({ message: 'School approved successfully.', school: data[0] });
     } catch (error) {
@@ -62,39 +61,31 @@ exports.approveSchool = async (req, res) => {
  */
 exports.rejectSchool = async (req, res) => {
     const { id } = req.params;
-    // In a real app, you might want a reason for rejection.
-    // For simplicity, we will delete the school and its admin.
+    const { reason } = req.body;
+
+    if (!reason) {
+        return res.status(400).json({ message: 'A reason for rejection is required.' });
+    }
 
     try {
-        // It's good practice to wrap this in a transaction if possible,
-        // but Supabase JS library doesn't support multi-table transactions easily.
-        // We'll proceed with sequential deletions.
-
-        // First, delete associated users (admins) to maintain data integrity
-        const { error: userError } = await supabase
-            .from('users')
-            .delete()
-            .eq('school_id', id);
-
-        if (userError) {
-            // If this fails, we don't want to leave an orphaned school.
-            // Log the error but proceed to delete the school anyway.
-            console.error('Could not delete associated admin user during rejection:', userError);
-        }
-
-        // Then, delete the school
-        const { data, error: schoolError } = await supabase
+        const { data, error } = await supabase
             .from('schools')
-            .delete()
-            .eq('id', id);
+            .update({
+                status: 'rejected',
+                rejection_reason: reason
+            })
+            .eq('id', id)
+            .select();
 
-        if (schoolError) throw schoolError;
+        if (error) throw error;
 
         if (data.length === 0) {
             return res.status(404).json({ message: 'School not found.' });
         }
 
-        res.status(200).json({ message: 'School rejected and deleted successfully.' });
+        // TODO: Trigger a rejection email to the school's admin.
+
+        res.status(200).json({ message: 'School rejected successfully.', school: data[0] });
     } catch (error) {
         console.error('Error rejecting school:', error);
         res.status(500).json({ message: 'Server error while rejecting school.' });
