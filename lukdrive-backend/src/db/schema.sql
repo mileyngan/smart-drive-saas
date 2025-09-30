@@ -139,6 +139,7 @@ CREATE TABLE student_progress (
     quiz_score NUMERIC(5, 2),
     quiz_passed BOOLEAN DEFAULT false,
     practical_tasks_completed BOOLEAN DEFAULT false,
+    instructor_notes TEXT,
     last_accessed_at TIMESTAMPTZ DEFAULT now(),
     UNIQUE(student_id, chapter_id)
 );
@@ -158,5 +159,20 @@ CREATE TABLE otp_tokens (
 -- Add some basic indexes for performance
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_schools_ministry_code ON schools(ministry_code);
+--
+-- STUDENT_ENROLLMENTS
+-- Links students to the programs they are enrolled in.
+--
+CREATE TABLE student_enrollments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    program_id UUID NOT NULL REFERENCES programs(id) ON DELETE CASCADE,
+    enrolled_at TIMESTAMPTZ DEFAULT now(),
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'dropped_out')),
+    UNIQUE(student_id, program_id) -- A student can't be enrolled in the same program twice at the same time if status is active
+);
+
+
 CREATE INDEX idx_student_progress_student_chapter ON student_progress(student_id, chapter_id);
 CREATE INDEX idx_instructor_assignments_instructor_student ON instructor_assignments(instructor_id, student_id);
+CREATE INDEX idx_student_enrollments_student_program ON student_enrollments(student_id, program_id);

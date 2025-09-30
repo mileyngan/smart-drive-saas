@@ -1,17 +1,13 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import useAuthStore from '../../store/authStore';
 import instructorService from '../../services/instructor.service';
 import { Link } from 'react-router-dom';
 import { Eye } from 'lucide-react';
 
 const InstructorDashboard = () => {
-    const token = useAuthStore((state) => state.token);
-
     const { data: students, isLoading, error } = useQuery({
         queryKey: ['instructorStudents'],
-        queryFn: () => instructorService.getStudents(token).then(res => res.data),
-        enabled: !!token,
+        queryFn: () => instructorService.getAssignedStudents().then(res => res.data),
     });
 
     if (isLoading) return <div>Loading students...</div>;

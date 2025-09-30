@@ -1,33 +1,25 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import useAuthStore from '../../store/authStore';
 import studentService from '../../services/student.service';
 import Button from '../../components/common/Button';
 import SecureContentWrapper from '../../components/student/SecureContentWrapper';
 import Watermark from '../../components/student/Watermark';
 
-// Placeholder for a service to get single chapter details
-const getChapterDetails = async (chapterId, token) => {
-    // In a real app, this would fetch from an endpoint like `/api/student/chapter/${chapterId}`
-    // For now, we'll mock it, assuming the necessary URLs would be returned.
-    return {
-        title: `Chapter ${chapterId}: The Rules of the Road`,
-        ebook_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', // Using a dummy PDF for display
-        video_url: 'https://www.w3.org/2010/05/video/mediaevents.html', // Using a sample video
-    };
-}
-
 const ChapterView = () => {
   const { chapterId } = useParams();
-  const token = useAuthStore(state => state.token);
 
-  const { data: chapter, isLoading } = useQuery({
-      queryKey: ['chapter', chapterId],
-      queryFn: () => getChapterDetails(chapterId, token)
+  // Fetch all chapters and then find the current one.
+  // This leverages the existing endpoint and react-query's caching.
+  const { data: chapters, isLoading } = useQuery({
+      queryKey: ['studentChapters'],
+      queryFn: () => studentService.getChapters().then(res => res.data),
   });
 
+  const chapter = chapters?.find(c => c.id === chapterId);
+
   if (isLoading) return <div>Loading chapter...</div>;
+  if (!chapter) return <div>Chapter not found or you do not have access.</div>;
 
   return (
     <SecureContentWrapper>

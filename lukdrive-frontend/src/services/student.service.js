@@ -1,52 +1,56 @@
 import api from './api';
 
-const getDashboard = (token) => {
-  return api.get('/student/dashboard', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+const API_URL = '/student';
+
+/**
+ * Fetches the dashboard data for the logged-in student.
+ * @returns {Promise<object>} The response from the API.
+ */
+const getDashboard = () => {
+  return api.get(`${API_URL}/dashboard`);
 };
 
-const getEnrolledProgram = (token) => {
-  return api.get('/student/program', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+/**
+ * Fetches the student's currently enrolled program.
+ * @returns {Promise<object>} The response from the API.
+ */
+const getEnrolledProgram = () => {
+  return api.get(`${API_URL}/program`);
 };
 
-const getChapters = (token) => {
-  return api.get('/student/chapters', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+/**
+ * Fetches all chapters for the student's program, including their progress.
+ * @returns {Promise<object>} The response from the API.
+ */
+const getChapters = () => {
+  return api.get(`${API_URL}/chapters`);
 };
 
-const updateProgress = (progressData, token) => {
-  return api.post('/student/progress', progressData, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+/**
+ * Updates the student's progress for a specific chapter.
+ * @param {object} progressData - The progress data to update (e.g., { chapter_id, ebook_completed }).
+ * @returns {Promise<object>} The response from the API.
+ */
+const updateProgress = (progressData) => {
+  return api.post(`${API_URL}/progress`, progressData);
 };
 
-
-const getQuiz = (chapterId, token) => {
-  return api.get(`/student/chapter/${chapterId}/quiz`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+/**
+ * Fetches the quiz for a specific chapter.
+ * @param {string} chapterId - The ID of the chapter.
+ * @returns {Promise<object>} The response from the API.
+ */
+const getQuiz = (chapterId) => {
+  return api.get(`${API_URL}/chapter/${chapterId}/quiz`);
 };
 
-const submitQuiz = (submissionData, token) => {
-    return api.post('/student/quiz/submit', submissionData, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
+/**
+ * Submits the student's answers for a quiz.
+ * @param {object} submissionData - The submission data (e.g., { chapterId, answers }).
+ * @returns {Promise<object>} The response containing the score and pass/fail status.
+ */
+const submitQuiz = (submissionData) => {
+  return api.post(`${API_URL}/quiz/submit`, submissionData);
 };
 
 const studentService = {

@@ -1,24 +1,26 @@
 const supabase = require('../config/database');
 
 /**
- * @desc    Get all students assigned to the instructor's school
+ * @desc    Get all students assigned to the logged-in instructor
  * @route   GET /api/instructor/students
  * @access  Private (Instructor)
  */
 exports.getStudents = async (req, res) => {
-    const schoolId = req.user.school_id;
+    const instructorId = req.user.id;
 
     try {
         const { data: students, error } = await supabase
-            .from('users')
-            .select('id, first_name, last_name, email, created_at')
-            .eq('school_id', schoolId)
-            .eq('role', 'student')
-            .eq('is_active', true);
+            .from('instructor_assignments')
+            .select(`
+                student:users (id, first_name, last_name, email, created_at)
+            `)
+            .eq('instructor_id', instructorId);
 
         if (error) throw error;
 
-        res.status(200).json(students);
+        // The data is nested, so we extract the student objects
+        const studentList = students.map(s => s.student);
+        res.status(200).json(studentList);
     } catch (error) {
         console.error('Error fetching students for instructor:', error);
         res.status(500).json({ message: 'Server error while fetching students.' });
@@ -51,11 +53,12 @@ exports.getStudentFile = async (req, res) => {
         const { data: progress, error: progressError } = await supabase
             .from('student_progress')
             .select(`
-                chapter:chapters (chapter_number, title),
+                chapter:chapters (id, chapter_number, title),
                 ebook_completed,
                 video_completed,
                 quiz_score,
-                practical_completed,
+                quiz_passed,
+                practical_tasks_completed,
                 instructor_notes
             `)
             .eq('student_id', studentId)
@@ -78,29 +81,29 @@ exports.getStudentFile = async (req, res) => {
  */
 exports.updateStudentProgress = async (req, res) => {
     const { id: studentId } = req.params;
-    const { chapter_id, practical_completed, instructor_notes } = req.body;
-    const schoolId = req.user.school_id;
+    const { chapter_id, practical_tasks_completed, instructor_notes } = req.body;
+    const instructorId = req.user.id;
 
     if (!chapter_id) {
         return res.status(400).json({ message: 'Chapter ID is required to update progress.' });
     }
 
     try {
-        // Verify student is in the same school
-        const { data: student, error: studentError } = await supabase
-            .from('users')
+        // Verify this instructor is assigned to this student
+        const { data: assignment, error: assignmentError } = await supabase
+            .from('instructor_assignments')
             .select('id')
-            .eq('id', studentId)
-            .eq('school_id', schoolId)
+            .eq('instructor_id', instructorId)
+            .eq('student_id', studentId)
             .single();
 
-        if (studentError || !student) {
-            return res.status(404).json({ message: 'Student not found in your school.' });
+        if (assignmentError || !assignment) {
+            return res.status(403).json({ message: 'You are not authorized to update this student\'s progress.' });
         }
 
         // Build the object with only the fields that are being updated
         const updateData = {};
-        if (practical_completed !== undefined) updateData.practical_completed = practical_completed;
+        if (practical_tasks_completed !== undefined) updateData.practical_tasks_completed = practical_tasks_completed;
         if (instructor_notes !== undefined) updateData.instructor_notes = instructor_notes;
 
         if (Object.keys(updateData).length === 0) {
