@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import useAuthStore from '../../store/authStore';
 import courseService from '../../services/course.service';
 import Input from '../common/Input';
 import Button from '../common/Button';
@@ -10,16 +9,15 @@ import { UploadCloud, FileText, Video, CheckCircle } from 'lucide-react';
 
 const ChapterForm = ({ courseId, onChapterAdded }) => {
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
-  const token = useAuthStore((state) => state.token);
   const [ebookUrl, setEbookUrl] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
 
   const uploadMutation = useMutation({
-    mutationFn: (file) => courseService.uploadFile(file, token),
-    onSuccess: (response, file) => {
-      toast.success(`${file.name} uploaded successfully!`);
+    mutationFn: courseService.uploadFile,
+    onSuccess: (response, variables) => {
+      toast.success(`${variables.get('file').name} uploaded successfully!`);
       const url = response.data.publicUrl;
-      if (file.type === 'application/pdf') {
+      if (variables.get('file').type === 'application/pdf') {
         setEbookUrl(url);
       } else {
         setVideoUrl(url);
@@ -31,10 +29,10 @@ const ChapterForm = ({ courseId, onChapterAdded }) => {
   });
 
   const chapterMutation = useMutation({
-    mutationFn: (chapterData) => courseService.addChapter(courseId, chapterData, token),
+    mutationFn: (chapterData) => courseService.addChapter(courseId, chapterData),
     onSuccess: () => {
       toast.success('Chapter added successfully!');
-      onChapterAdded(); // This will be a function passed from the parent to refetch chapters
+      onChapterAdded();
       reset();
       setEbookUrl('');
       setVideoUrl('');
@@ -47,7 +45,9 @@ const ChapterForm = ({ courseId, onChapterAdded }) => {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      uploadMutation.mutate(file);
+      const formData = new FormData();
+      formData.append('file', file);
+      uploadMutation.mutate(formData);
     }
   };
 

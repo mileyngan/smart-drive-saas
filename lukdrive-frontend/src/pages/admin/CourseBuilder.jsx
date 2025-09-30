@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import useAuthStore from '../../store/authStore';
 import courseService from '../../services/course.service';
-import adminService from '../../services/admin.service';
 import CourseForm from '../../components/admin/CourseForm';
 import ChapterForm from '../../components/admin/ChapterForm';
 import { Book, CheckCircle, Plus, List } from 'lucide-react';
@@ -12,31 +10,30 @@ const CourseBuilder = () => {
   const [step, setStep] = useState(0);
   const [createdCourse, setCreatedCourse] = useState(null);
   const [selectedProgram, setSelectedProgram] = useState(null);
-  const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
 
   // Fetch existing programs
   const { data: existingPrograms, isLoading: isLoadingPrograms } = useQuery({
     queryKey: ['programs'],
-    queryFn: () => adminService.getPrograms(token).then(res => res.data),
-    enabled: !!token,
+    queryFn: () => courseService.getPrograms().then(res => res.data),
   });
 
   const { data: chapters, isLoading: isLoadingChapters, refetch: refetchChapters } = useQuery({
     queryKey: ['chapters', selectedProgram?.id || createdCourse?.id],
-    queryFn: () => courseService.getChaptersByCourse(selectedProgram?.id || createdCourse?.id, token).then(res => res.data),
+    queryFn: () => courseService.getChapters(selectedProgram?.id || createdCourse?.id).then(res => res.data),
     enabled: !!(selectedProgram || createdCourse),
   });
 
   const createCourseMutation = useMutation({
-    mutationFn: (courseData) => courseService.createCourse(courseData, token),
+    mutationFn: courseService.createProgram,
     onSuccess: (response) => {
-      toast.success('Course created successfully! Now add chapters.');
+      toast.success('Program created successfully! Now add chapters.');
       setCreatedCourse(response.data);
+      queryClient.invalidateQueries(['programs']); // Invalidate to refetch the list
       setStep(2);
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to create course.');
+      toast.error(error.response?.data?.message || 'Failed to create program.');
     },
   });
 
