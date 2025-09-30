@@ -1,27 +1,32 @@
 import api from './api';
 
-const getPendingSchools = (token) => {
-  return api.get('/superadmin/schools/pending', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+const API_URL = '/superadmin';
+
+/**
+ * Fetches the list of schools pending approval.
+ * @returns {Promise<object>} The response from the API.
+ */
+const getPendingSchools = () => {
+  return api.get(`${API_URL}/schools/pending`);
 };
 
-const approveSchool = (schoolId, token) => {
-  return api.put(`/superadmin/schools/${schoolId}/approve`, {}, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+/**
+ * Sends a request to approve a school.
+ * @param {string} schoolId - The ID of the school to approve.
+ * @returns {Promise<object>} The response from the API.
+ */
+const approveSchool = (schoolId) => {
+  return api.put(`${API_URL}/schools/${schoolId}/approve`);
 };
 
-const rejectSchool = (schoolId, token) => {
-  return api.put(`/superadmin/schools/${schoolId}/reject`, {}, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+/**
+ * Sends a request to reject a school.
+ * @param {string} schoolId - The ID of the school to reject.
+ * @param {string} reason - The reason for rejection.
+ * @returns {Promise<object>} The response from the API.
+ */
+const rejectSchool = (schoolId, reason) => {
+  return api.put(`${API_URL}/schools/${schoolId}/reject`, { reason });
 };
 
 const superadminService = {
