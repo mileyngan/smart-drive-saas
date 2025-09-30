@@ -1,6 +1,5 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import useAuthStore from '../../store/authStore';
 import studentService from '../../services/student.service';
 import { BookOpen, Target, CheckCircle } from 'lucide-react';
 
@@ -15,12 +14,9 @@ const StatCard = ({ title, value, icon }) => (
 );
 
 const StudentDashboard = () => {
-  const token = useAuthStore((state) => state.token);
-
   const { data: dashboardData, isLoading, error } = useQuery({
     queryKey: ['studentDashboard'],
-    queryFn: () => studentService.getDashboard(token).then(res => res.data),
-    enabled: !!token,
+    queryFn: () => studentService.getDashboard().then(res => res.data),
   });
 
   if (isLoading) return <div>Loading dashboard...</div>;

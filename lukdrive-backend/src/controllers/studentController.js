@@ -62,7 +62,8 @@ exports.getChapters = async (req, res) => {
                     ebook_completed,
                     video_completed,
                     quiz_score,
-                    practical_completed
+                    quiz_passed,
+                    practical_tasks_completed
                 )
             `)
             .eq('program_id', enrollment.program_id)

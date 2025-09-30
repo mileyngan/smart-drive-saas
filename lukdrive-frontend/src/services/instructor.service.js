@@ -1,31 +1,35 @@
 import api from './api';
 
-const getStudents = (token) => {
-  return api.get('/instructor/students', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+const API_URL = '/instructor';
+
+/**
+ * Fetches the list of students assigned to the logged-in instructor.
+ * @returns {Promise<object>} The response from the API.
+ */
+const getAssignedStudents = () => {
+  return api.get(`${API_URL}/students`);
 };
 
-const getStudentFile = (studentId, token) => {
-  return api.get(`/instructor/students/${studentId}/file`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+/**
+ * Fetches the detailed file (progress) for a specific student.
+ * @param {string} studentId - The ID of the student.
+ * @returns {Promise<object>} The response from the API.
+ */
+const getStudentFile = (studentId) => {
+  return api.get(`${API_URL}/students/${studentId}/file`);
 };
 
-const updateStudentProgress = (studentId, progressData, token) => {
-  return api.put(`/instructor/students/${studentId}/progress`, progressData, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+/**
+ * Updates a student's practical progress for a specific chapter.
+ * @param {object} progressData - The data for the progress update.
+ * @returns {Promise<object>} The response from the API.
+ */
+const updateStudentProgress = (progressData) => {
+  return api.put(`${API_URL}/students/${progressData.studentId}/progress`, progressData);
 };
 
 const instructorService = {
-  getStudents,
+  getAssignedStudents,
   getStudentFile,
   updateStudentProgress,
 };

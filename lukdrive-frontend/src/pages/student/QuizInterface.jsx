@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import useAuthStore from '../../store/authStore';
 import studentService from '../../services/student.service';
 import Button from '../../components/common/Button';
 import toast from 'react-hot-toast';
@@ -10,7 +9,6 @@ import { Clock } from 'lucide-react';
 const QuizInterface = () => {
     const { chapterId } = useParams();
     const navigate = useNavigate();
-    const token = useAuthStore((state) => state.token);
     const queryClient = useQueryClient();
 
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -21,12 +19,11 @@ const QuizInterface = () => {
 
     const { data: quiz, isLoading } = useQuery({
         queryKey: ['quiz', chapterId],
-        queryFn: () => studentService.getQuiz(chapterId, token).then(res => res.data),
-        enabled: !!token,
+        queryFn: () => studentService.getQuiz(chapterId).then(res => res.data),
     });
 
     const submissionMutation = useMutation({
-        mutationFn: (submissionData) => studentService.submitQuiz(submissionData, token),
+        mutationFn: (submissionData) => studentService.submitQuiz(submissionData),
         onSuccess: (response) => {
             setResult(response.data);
             setShowResult(true);

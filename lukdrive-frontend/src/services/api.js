@@ -10,16 +10,22 @@ const api = axios.create({
   },
 });
 
+import useAuthStore from '../store/authStore';
+
 /**
- * We can add an interceptor here later to automatically
- * attach the auth token to every request.
+ * An interceptor to automatically attach the auth token to every request.
  */
-// api.interceptors.request.use(config => {
-//   const token = // get token from state management
-//   if (token) {
-//     config.headers.Authorization = `Bearer ${token}`;
-//   }
-//   return config;
-// });
+api.interceptors.request.use(
+  (config) => {
+    const token = useAuthStore.getState().token;
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 export default api;

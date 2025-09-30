@@ -15,11 +15,10 @@ exports.getDashboardStats = async (req, res) => {
   }
 
   try {
-    // Fetch user counts and enrollment data concurrently
+    // Fetch user counts concurrently
     const [
       { count: totalStudents, error: studentError },
       { count: totalInstructors, error: instructorError },
-      { data: enrollments, error: enrollmentError },
     ] = await Promise.all([
       supabase
         .from('users')
@@ -31,24 +30,16 @@ exports.getDashboardStats = async (req, res) => {
         .select('*', { count: 'exact', head: true })
         .eq('school_id', schoolId)
         .eq('role', 'instructor'),
-      supabase
-        .from('student_enrollments')
-        .select('status, program:programs!inner(school_id)')
-        .eq('program.school_id', schoolId)
     ]);
 
-    if (studentError || instructorError || enrollmentError) {
-      console.error('Error fetching dashboard data:', studentError || instructorError || enrollmentError);
+    if (studentError || instructorError) {
+      console.error('Error fetching dashboard data:', studentError || instructorError);
       throw new Error('Could not fetch all required dashboard data from the database.');
     }
 
-    // Calculate completion rate
-    const totalEnrollments = enrollments.length;
-    const completedEnrollments = enrollments.filter(e => e.status === 'completed').length;
-    const completionRate = totalEnrollments > 0 ? Math.round((completedEnrollments / totalEnrollments) * 100) : 0;
-
-    // Placeholder for revenue
-    const revenue = 0; // To be implemented later
+    // Placeholders for more complex calculations
+    const completionRate = 0; // TODO: Implement business logic for completion rate
+    const revenue = 0; // TODO: Implement revenue tracking
 
     res.status(200).json({
       totalStudents: totalStudents || 0,
@@ -203,48 +194,6 @@ exports.deactivateUser = async (req, res) => {
     }
 };
 
-/**
- * @desc    Enroll a student in a course program
- * @route   POST /api/admin/enrollments
- * @access  Private (Admin)
- */
-exports.enrollStudent = async (req, res) => {
-    const { student_id, program_id } = req.body;
-    const school_id = req.user.school_id;
-
-    if (!student_id || !program_id) {
-        return res.status(400).json({ message: 'Student ID and Program ID are required.' });
-    }
-
-    try {
-        // Optional: Verify both the student and program belong to the admin's school
-        // For simplicity, we assume valid IDs are passed from the frontend which has this context.
-
-        const { data, error } = await supabase
-            .from('student_enrollments')
-            .insert({
-                student_id,
-                program_id,
-                enrolled_at: new Date(),
-                status: 'active'
-            })
-            .select()
-            .single();
-
-        if (error) {
-            // Handle case where student is already enrolled
-            if (error.code === '23505') {
-                return res.status(409).json({ message: 'This student is already enrolled in a program.' });
-            }
-            throw error;
-        }
-
-        res.status(201).json({ message: 'Student enrolled successfully.', enrollment: data });
-    } catch (error) {
-        console.error('Error enrolling student:', error);
-        res.status(500).json({ message: 'Server error while enrolling student.' });
-    }
-};
 
 /**
  * @desc    Get all course programs for the admin's school

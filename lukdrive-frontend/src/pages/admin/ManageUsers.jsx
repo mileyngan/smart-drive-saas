@@ -1,13 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import useAuthStore from '../../store/authStore';
 import adminService from '../../services/admin.service';
 import Table from '../../components/common/Table';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import UserForm from '../../components/admin/UserForm';
-import EnrollmentForm from '../../components/admin/EnrollmentForm';
 import { PlusCircle } from 'lucide-react';
 
 const TABS = ['Students', 'Instructors', 'Admins'];
@@ -15,17 +13,14 @@ const TABS = ['Students', 'Instructors', 'Admins'];
 const ManageUsers = () => {
   const [activeTab, setActiveTab] = useState(TABS[0]);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
 
   const role = activeTab.slice(0, -1).toLowerCase();
 
   const { data: users, isLoading, error } = useQuery({
     queryKey: ['users', role],
-    queryFn: () => adminService.getUsersByRole(role, token).then(res => res.data),
-    enabled: !!token,
+    queryFn: () => adminService.getUsersByRole(role).then(res => res.data),
   });
 
   const mutationOptions = (successMessage) => ({
@@ -33,7 +28,6 @@ const ManageUsers = () => {
       toast.success(successMessage);
       queryClient.invalidateQueries(['users', role]);
       setIsUserModalOpen(false);
-      setIsEnrollModalOpen(false);
       setSelectedUser(null);
     },
     onError: (error) => {
@@ -42,27 +36,22 @@ const ManageUsers = () => {
   });
 
   const createUserMutation = useMutation({
-    mutationFn: (userData) => adminService.createUser(userData, token),
+    mutationFn: adminService.createUser,
     ...mutationOptions('User created successfully!'),
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: ({ userId, userData }) => adminService.updateUser(userId, userData, token),
+    mutationFn: ({ userId, userData }) => adminService.updateUser(userId, userData),
     ...mutationOptions('User updated successfully!'),
   });
 
   const deactivateUserMutation = useMutation({
-    mutationFn: (userId) => adminService.deactivateUser(userId, token),
+    mutationFn: adminService.deactivateUser,
     ...mutationOptions('User deactivated successfully!'),
   });
 
-  const enrollStudentMutation = useMutation({
-    mutationFn: (enrollmentData) => adminService.enrollStudent(enrollmentData, token),
-    ...mutationOptions('Student enrolled successfully!'),
-  });
-
   const handleFormSubmit = (data) => {
-    if (selectedUser && isUserModalOpen) {
+    if (selectedUser) {
       updateUserMutation.mutate({ userId: selectedUser.id, userData: data });
     } else {
       createUserMutation.mutate(data);
@@ -74,11 +63,6 @@ const ManageUsers = () => {
     setIsUserModalOpen(true);
   };
 
-  const openEnrollModal = (user) => {
-    setSelectedUser(user);
-    setIsEnrollModalOpen(true);
-  };
-
   const handleDeactivate = (userId) => {
     if (window.confirm('Are you sure you want to deactivate this user?')) {
       deactivateUserMutation.mutate(userId);
@@ -86,22 +70,14 @@ const ManageUsers = () => {
   };
 
   const columns = useMemo(() => {
-    const baseColumns = [
-      { Header: 'Name', accessor: 'first_name', Cell: ({ row }) => `${row.first_name} ${row.last_name}` },
+    return [
+      { Header: 'Name', accessor: 'first_name', Cell: ({ row: { original } }) => `${original.first_name} ${original.last_name}` },
       { Header: 'Email', accessor: 'email' },
-      { Header: 'Status', accessor: 'is_active', Cell: ({ row }) => ( <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${ row.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }`}> {row.is_active ? 'Active' : 'Inactive'} </span> ) },
-      { Header: 'Date Added', accessor: 'created_at', Cell: ({ row }) => new Date(row.created_at).toLocaleDateString() },
-      { Header: 'Actions', accessor: 'actions', Cell: ({ row }) => ( <div className="space-x-2"> <Button onClick={() => openEditModal(row)} variant="secondary" className="text-xs py-1 px-2">Edit</Button> <Button onClick={() => handleDeactivate(row.id)} variant="danger" className="text-xs py-1 px-2">Deactivate</Button> </div> ) },
+      { Header: 'Status', accessor: 'is_active', Cell: ({ row: { original } }) => ( <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${ original.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }`}> {original.is_active ? 'Active' : 'Inactive'} </span> ) },
+      { Header: 'Date Added', accessor: 'created_at', Cell: ({ row: { original } }) => new Date(original.created_at).toLocaleDateString() },
+      { Header: 'Actions', accessor: 'actions', Cell: ({ row: { original } }) => ( <div className="space-x-2"> <Button onClick={() => openEditModal(original)} variant="secondary" className="text-xs py-1 px-2">Edit</Button> <Button onClick={() => handleDeactivate(original.id)} variant="danger" className="text-xs py-1 px-2">Deactivate</Button> </div> ) },
     ];
-    if (role === 'student') {
-        baseColumns.push({
-            Header: 'Enrollment',
-            accessor: 'enroll',
-            Cell: ({ row }) => <Button onClick={() => openEnrollModal(row)} className="text-xs py-1 px-2">Enroll</Button>
-        });
-    }
-    return baseColumns;
-  }, [role]);
+  }, []);
 
   const isMutating = createUserMutation.isPending || updateUserMutation.isPending;
 
@@ -127,11 +103,7 @@ const ManageUsers = () => {
       </div>
 
       <Modal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} title={selectedUser ? 'Edit User' : 'Create New User'}>
-        <UserForm onSubmit={handleFormSubmit} isLoading={isMutating} defaultValues={selectedUser} isEdit={!!selectedUser} />
-      </Modal>
-
-      <Modal isOpen={isEnrollModalOpen} onClose={() => setIsEnrollModalOpen(false)} title="Enroll Student">
-        {selectedUser && <EnrollmentForm student={selectedUser} onSubmit={enrollStudentMutation.mutate} isLoading={enrollStudentMutation.isPending} />}
+        <UserForm onSubmit={handleFormSubmit} isLoading={isMutating} defaultValues={selectedUser} isEdit={!!selectedUser} role={role} />
       </Modal>
     </div>
   );
