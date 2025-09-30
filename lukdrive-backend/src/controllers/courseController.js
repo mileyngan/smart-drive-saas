@@ -21,7 +21,13 @@ exports.createCourse = async (req, res) => {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            // Handle duplicate course names within the same school
+            if (error.code === '23505') {
+                return res.status(409).json({ message: 'A course with this name already exists in your school.' });
+            }
+            throw error;
+        }
         res.status(201).json(data);
     } catch (error) {
         console.error('Error creating course:', error);
@@ -67,7 +73,14 @@ exports.addChapter = async (req, res) => {
             .insert({ program_id: courseId, chapter_number, title, ebook_url, video_url, duration_minutes })
             .select()
             .single();
-        if (error) throw error;
+
+        if (error) {
+            // Handle duplicate chapter numbers within the same program
+            if (error.code === '23505') {
+                return res.status(409).json({ message: 'A chapter with this number already exists in this course.' });
+            }
+            throw error;
+        }
         res.status(201).json(data);
     } catch (error) {
         console.error('Error adding chapter:', error);
