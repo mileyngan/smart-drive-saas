@@ -53,12 +53,32 @@ const uploadFile = (formData) => {
   });
 };
 
+/**
+ * Generates a quiz for a chapter using AI.
+ * @param {string} chapterId - The ID of the chapter.
+ * @returns {Promise<object>} The response containing the generated questions.
+ */
+const generateQuiz = (chapterId) => {
+    return api.post(`${API_URL}/quiz/generate`, { chapterId });
+};
+
+/**
+ * Saves the quiz questions for a chapter.
+ * @param {object} quizData - The quiz data to save (chapterId, title, questions).
+ * @returns {Promise<object>} The response from the API.
+ */
+const saveQuiz = (quizData) => {
+    return api.post(`${API_URL}/quiz`, quizData);
+};
+
 const courseService = {
   createProgram,
   getPrograms,
   getChapters,
   addChapter,
   uploadFile,
+  generateQuiz,
+  saveQuiz,
 };
 
 export default courseService;

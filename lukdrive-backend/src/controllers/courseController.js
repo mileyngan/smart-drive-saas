@@ -36,7 +36,7 @@ exports.createCourse = async (req, res) => {
 };
 
 /**
- * @desc    Get all chapters for a specific course
+ * @desc    Get all chapters for a specific course, including quiz status
  * @route   GET /api/courses/:courseId/chapters
  * @access  Private (Admin)
  */
@@ -45,11 +45,23 @@ exports.getChaptersByCourse = async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('chapters')
-            .select('*')
+            .select(`
+                *,
+                quizzes ( id )
+            `)
             .eq('program_id', courseId)
             .order('chapter_number', { ascending: true });
+
         if (error) throw error;
-        res.status(200).json(data);
+
+        // Simplify the returned data structure
+        const chaptersWithQuizStatus = data.map(c => ({
+            ...c,
+            has_quiz: c.quizzes.length > 0,
+            quizzes: undefined, // remove the nested array
+        }));
+
+        res.status(200).json(chaptersWithQuizStatus);
     } catch (error) {
         console.error('Error fetching chapters:', error);
         res.status(500).json({ message: 'Server error while fetching chapters.' });
@@ -89,7 +101,7 @@ exports.addChapter = async (req, res) => {
 };
 
 /**
- * @desc    Generate a quiz for a chapter using AI
+ * @desc    Generate quiz questions from a chapter's content without saving
  * @route   POST /api/courses/quiz/generate
  * @access  Private (Admin)
  */
@@ -101,36 +113,54 @@ exports.generateQuiz = async (req, res) => {
     }
 
     try {
-        // 1. Get the chapter's ebook URL
         const { data: chapter, error: chapterError } = await supabase
             .from('chapters')
-            .select('ebook_url')
+            .select('ebook_content_url')
             .eq('id', chapterId)
             .single();
 
         if (chapterError || !chapter) {
             return res.status(404).json({ message: 'Chapter not found.' });
         }
-        if (!chapter.ebook_url) {
+        if (!chapter.ebook_content_url) {
             return res.status(400).json({ message: 'This chapter does not have an eBook to generate a quiz from.' });
         }
 
-        // 2. Generate the quiz from the PDF URL using the service
-        const questions = await quizService.generateQuizFromPdfUrl(chapter.ebook_url);
+        const questions = await quizService.generateQuizFromPdfUrl(chapter.ebook_content_url);
 
-        // 3. Save the generated quiz to the database
-        const { data: quiz, error: quizError } = await supabase
-            .from('quizzes')
-            .upsert({ chapter_id: chapterId, questions: questions }, { onConflict: 'chapter_id' })
-            .select()
-            .single();
-
-        if (quizError) throw quizError;
-
-        res.status(200).json({ message: 'Quiz generated and saved successfully!', quiz });
+        res.status(200).json({ questions });
 
     } catch (error) {
         console.error('Error in quiz generation process:', error);
         res.status(500).json({ message: error.message || 'Server error during quiz generation.' });
+    }
+};
+
+/**
+ * @desc    Save a quiz for a chapter
+ * @route   POST /api/courses/quiz
+ * @access  Private (Admin)
+ */
+exports.saveQuiz = async (req, res) => {
+    const { chapterId, questions, title } = req.body;
+
+    if (!chapterId || !questions || !title) {
+        return res.status(400).json({ message: 'Chapter ID, title, and questions are required.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('quizzes')
+            .upsert({ chapter_id: chapterId, questions: questions, title: title }, { onConflict: 'chapter_id' })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.status(201).json({ message: 'Quiz saved successfully!', quiz: data });
+
+    } catch (error) {
+        console.error('Error saving quiz:', error);
+        res.status(500).json({ message: 'Server error while saving quiz.' });
     }
 };
