@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { LayoutDashboard, BookOpen, User } from 'lucide-react';
 import UserNav from './UserNav';
+import Chatbot from '../common/Chatbot';
 
 const navLinks = [
   { name: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
@@ -39,6 +40,7 @@ const StudentLayout = () => {
           <Outlet />
         </main>
       </div>
+      <Chatbot />
     </div>
   );
 };

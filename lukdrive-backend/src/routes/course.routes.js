@@ -27,4 +27,9 @@ router.post('/:courseId/chapters', courseController.addChapter);
 // @access  Private (Admin)
 router.post('/quiz/generate', courseController.generateQuiz);
 
+// @route   POST api/courses/quiz
+// @desc    Save a quiz for a chapter
+// @access  Private (Admin)
+router.post('/quiz', courseController.saveQuiz);
+
 module.exports = router;

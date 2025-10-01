@@ -27,6 +27,7 @@ app.use('/api/files', fileRoutes);
 app.use('/api/student', require('./routes/student.routes'));
 app.use('/api/instructor', require('./routes/instructor.routes'));
 app.use('/api/superadmin', require('./routes/superadmin.routes'));
+app.use('/api/chatbot', require('./routes/chatbot.routes'));
 
 // Basic route for testing
 app.get('/', (req, res) => {
