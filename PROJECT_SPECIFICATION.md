@@ -80,7 +80,7 @@ The student is at the center of the learning experience, with an interactive and
 *   **Advanced Content Security (DRM):**
     *   All learning content is wrapped in a secure container that **disables right-click, copy/paste, and printing**.
     *   The system detects if developer tools are open and will blank the screen to prevent inspection.
-    *   A **simulated Camera Detection** feature is included for the presentation, displaying a "CAM-DRM ACTIVE" indicator and a toast notification to demonstrate the platform's advanced security vision.
+    *   An **Advanced Camera Detection Simulation** is included. When a student opens secure content, they are taken through a permission flow to activate their webcam. A live feed is shown in the corner of the screen, and after a short period, the system simulates the detection of a recording device, blanks the screen, and logs a security incident to the backend. This provides a high-fidelity demonstration of the platform's advanced security capabilities.
 *   **AI Chatbot Assistant:**
     *   A floating chatbot icon is available on all student pages.
     *   Students can ask questions about the Cameroonian road code, and the AI assistant, powered by GPT-3.5, will provide helpful and context-aware answers.

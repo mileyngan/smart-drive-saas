@@ -176,3 +176,17 @@ CREATE TABLE student_enrollments (
 CREATE INDEX idx_student_progress_student_chapter ON student_progress(student_id, chapter_id);
 CREATE INDEX idx_instructor_assignments_instructor_student ON instructor_assignments(instructor_id, student_id);
 CREATE INDEX idx_student_enrollments_student_program ON student_enrollments(student_id, program_id);
+
+--
+-- SECURITY_INCIDENTS
+-- Logs security-related events for auditing purposes.
+--
+CREATE TABLE security_incidents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    incident_type TEXT NOT NULL CHECK (incident_type IN ('camera_detected', 'devtools_opened', 'print_attempted', 'copy_attempted')),
+    details TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_security_incidents_user_id ON security_incidents(user_id);
