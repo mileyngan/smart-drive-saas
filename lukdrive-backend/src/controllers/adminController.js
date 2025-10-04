@@ -196,6 +196,147 @@ exports.deactivateUser = async (req, res) => {
 
 
 /**
+ * @desc    Enroll a student in a course program
+ * @route   POST /api/admin/enroll
+ * @access  Private (Admin)
+ */
+exports.enrollStudent = async (req, res) => {
+    const { student_id, program_id } = req.body;
+    const school_id = req.user.school_id;
+
+    if (!student_id || !program_id) {
+        return res.status(400).json({ message: 'Student ID and Program ID are required.' });
+    }
+
+    try {
+        // TODO: Add verification to ensure student and program belong to the admin's school
+        const { data, error } = await supabase
+            .from('student_enrollments')
+            .insert({
+                student_id,
+                program_id,
+                enrolled_at: new Date(),
+                status: 'active'
+            })
+            .select()
+            .single();
+
+        if (error) {
+            if (error.code === '23505') { // unique constraint violation
+                return res.status(409).json({ message: 'This student is already enrolled in this program.' });
+            }
+            throw error;
+        }
+
+        res.status(201).json({ message: 'Student enrolled successfully.', enrollment: data });
+    } catch (error) {
+        console.error('Error enrolling student:', error);
+        res.status(500).json({ message: 'Server error while enrolling student.' });
+    }
+};
+
+/**
+ * @desc    Log a payment for a student's enrollment
+ * @route   POST /api/admin/payments
+ * @access  Private (Admin)
+ */
+exports.logPayment = async (req, res) => {
+    const { enrollment_id, student_id, amount, payment_method, notes } = req.body;
+
+    if (!enrollment_id || !student_id || !amount || !payment_method) {
+        return res.status(400).json({ message: 'Enrollment ID, Student ID, amount, and payment method are required.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('payments')
+            .insert({ enrollment_id, student_id, amount, payment_method, notes })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.status(201).json({ message: 'Payment logged successfully.', payment: data });
+    } catch (error) {
+        console.error('Error logging payment:', error);
+        res.status(500).json({ message: 'Server error while logging payment.' });
+    }
+};
+
+/**
+ * @desc    Get full details for a single student
+ * @route   GET /api/admin/student/:id
+ * @access  Private (Admin)
+ */
+exports.getStudentDetails = async (req, res) => {
+    const { id: studentId } = req.params;
+    const school_id = req.user.school_id;
+
+    try {
+        const { data: student, error: studentError } = await supabase
+            .from('users')
+            .select(`
+                *,
+                enrollments:student_enrollments (
+                    *,
+                    program:programs(*),
+                    payments:payments(*)
+                )
+            `)
+            .eq('id', studentId)
+            .eq('school_id', school_id)
+            .eq('role', 'student')
+            .single();
+
+        if (studentError) throw studentError;
+        if (!student) return res.status(404).json({ message: 'Student not found.' });
+
+        res.status(200).json(student);
+    } catch (error) {
+        console.error('Error fetching student details:', error);
+        res.status(500).json({ message: 'Server error while fetching student details.' });
+    }
+};
+
+/**
+ * @desc    Update a school's subscription plan
+ * @route   PUT /api/admin/subscription
+ * @access  Private (Admin)
+ */
+exports.updateSubscription = async (req, res) => {
+    const { plan } = req.body;
+    const school_id = req.user.school_id;
+
+    if (!plan || !['pro', 'enterprise'].includes(plan.toLowerCase())) {
+        return res.status(400).json({ message: 'A valid plan (Pro, Enterprise) is required.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('subscriptions')
+            .update({
+                plan: plan.toLowerCase(),
+                status: 'active',
+                starts_at: new Date(),
+                // In a real scenario, ends_at would be calculated based on the plan duration
+                ends_at: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+                trial_ends_at: null, // End the trial
+            })
+            .eq('school_id', school_id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.status(200).json({ message: `Subscription successfully updated to ${plan}.`, subscription: data });
+
+    } catch (error) {
+        console.error('Error updating subscription:', error);
+        res.status(500).json({ message: 'Server error while updating subscription.' });
+    }
+};
+
+/**
  * @desc    Get all course programs for the admin's school
  * @route   GET /api/admin/programs
  * @access  Private (Admin)

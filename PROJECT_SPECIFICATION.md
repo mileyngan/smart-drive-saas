@@ -53,6 +53,13 @@ The School Administrator manages all aspects of their individual driving school.
 *   **AI Quiz Generation:**
     *   For each chapter, the admin can click **"Generate Quiz"** to use AI to create a set of questions based on the uploaded eBook content.
     *   The admin is then presented with a **Quiz Editor**, allowing them to **review, edit, add, or delete questions** before saving the final quiz to the platform.
+*   **Student Enrollment & Payment Tracking:**
+    *   Administrators can enroll students into specific programs via the user management interface.
+    *   A new detailed student view provides a complete financial picture, showing the program fee, total amount paid, and remaining balance.
+    *   Admins can log individual payments (e.g., installments for cash or mobile money) against a student's enrollment.
+*   **Subscription Management:**
+    *   A dedicated page allows the school administrator to view their current subscription plan and compare it with available paid plans (Pro, Enterprise).
+    *   The interface allows the admin to upgrade their plan, which updates their subscription status across the platform.
 
 ### 3.3. Instructor
 
@@ -64,6 +71,9 @@ Instructors are responsible for tracking and managing the progress of their assi
     *   Instructors can view a detailed, chapter-by-chapter progress file for each student.
     *   This view shows the student's status on eBook/video completion and their quiz scores.
     *   The interface allows the instructor to **mark practical tasks as complete** and **add or edit instructor notes** for each chapter, with all changes saved in real-time.
+*   **Profile Management:**
+    *   A new profile page allows instructors to set their weekly availability using a simple interface (Morning, Afternoon, Evening for each day).
+    *   Instructors can upload a copy of their teaching license (PDF or image) for administrative verification.
 
 ### 3.4. Student
 

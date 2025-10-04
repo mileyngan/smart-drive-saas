@@ -28,10 +28,24 @@ const updateStudentProgress = (progressData) => {
   return api.put(`${API_URL}/students/${progressData.studentId}/progress`, progressData);
 };
 
+const updateProfile = (profileData) => {
+  return api.put(`${API_URL}/profile`, profileData);
+};
+
+const uploadLicense = (formData) => {
+  return api.post(`${API_URL}/profile/license`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};
+
 const instructorService = {
   getAssignedStudents,
   getStudentFile,
   updateStudentProgress,
+  updateProfile,
+  uploadLicense,
 };
 
 export default instructorService;

@@ -21,6 +21,8 @@ import RegisterPage from './pages/auth/RegisterPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ManageUsers from './pages/admin/ManageUsers';
 import CourseBuilder from './pages/admin/CourseBuilder';
+import StudentDetailPage from './pages/admin/StudentDetailPage';
+import SubscriptionPage from './pages/admin/SubscriptionPage';
 
 // Student Pages
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -31,6 +33,7 @@ import QuizInterface from './pages/student/QuizInterface';
 // Instructor Pages
 import InstructorDashboard from './pages/instructor/InstructorDashboard';
 import StudentFileViewer from './pages/instructor/StudentFileViewer';
+import InstructorProfilePage from './pages/instructor/InstructorProfilePage';
 
 // Super Admin Pages
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
@@ -55,7 +58,9 @@ function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<ManageUsers />} />
+            <Route path="student/:studentId" element={<StudentDetailPage />} />
             <Route path="courses" element={<CourseBuilder />} />
+            <Route path="subscription" element={<SubscriptionPage />} />
           </Route>
 
           {/* Student Routes */}
@@ -71,6 +76,7 @@ function App() {
               <Route path="dashboard" element={<InstructorDashboard />} />
               <Route path="students" element={<InstructorDashboard />} />
               <Route path="student/:studentId" element={<StudentFileViewer />} />
+              <Route path="profile" element={<InstructorProfilePage />} />
           </Route>
 
           {/* Super Admin Routes */}

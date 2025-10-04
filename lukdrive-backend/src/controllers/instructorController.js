@@ -126,3 +126,76 @@ exports.updateStudentProgress = async (req, res) => {
         res.status(500).json({ message: 'Server error while updating student progress.' });
     }
 };
+
+/**
+ * @desc    Update the logged-in instructor's profile
+ * @route   PUT /api/instructor/profile
+ * @access  Private (Instructor)
+ */
+exports.updateProfile = async (req, res) => {
+    const { availability, teaching_license_url } = req.body;
+    const instructorId = req.user.id;
+
+    const updateData = {};
+    if (availability) updateData.availability = availability;
+    if (teaching_license_url) updateData.teaching_license_url = teaching_license_url;
+
+    if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: 'No profile data provided to update.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .update(updateData)
+            .eq('id', instructorId)
+            .select('id, first_name, last_name, email, availability, teaching_license_url')
+            .single();
+
+        if (error) throw error;
+
+        res.status(200).json({ message: 'Profile updated successfully.', user: data });
+    } catch (error) {
+        console.error('Error updating instructor profile:', error);
+        res.status(500).json({ message: 'Server error while updating profile.' });
+    }
+};
+
+/**
+ * @desc    Upload a teaching license file
+ * @route   POST /api/instructor/profile/license
+ * @access  Private (Instructor)
+ */
+exports.uploadLicense = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded.' });
+    }
+
+    const file = req.file;
+    const fileName = `licenses/${req.user.id}-${Date.now()}${path.extname(file.originalname)}`;
+
+    try {
+        const { data, error } = await supabase.storage
+            .from('licenses')
+            .upload(fileName, file.buffer, {
+                contentType: file.mimetype,
+                upsert: true, // Overwrite if a file with the same name exists
+            });
+
+        if (error) throw error;
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('licenses')
+            .getPublicUrl(fileName);
+
+        res.status(200).json({
+            message: 'License uploaded successfully!',
+            filePath: data.path,
+            publicUrl: publicUrl,
+        });
+
+    } catch (error) {
+        console.error('Error uploading license file:', error);
+        res.status(500).json({ message: 'Server error while uploading license.' });
+    }
+};

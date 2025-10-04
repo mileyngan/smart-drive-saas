@@ -17,6 +17,8 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     phone_number VARCHAR(50),
     role TEXT NOT NULL CHECK (role IN ('superadmin', 'admin', 'instructor', 'student')),
+    availability JSONB, -- For instructor availability, e.g., {"monday": ["morning", "afternoon"]}
+    teaching_license_url TEXT, -- URL to the uploaded license file
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
     is_active BOOLEAN DEFAULT true
@@ -190,3 +192,21 @@ CREATE TABLE security_incidents (
 );
 
 CREATE INDEX idx_security_incidents_user_id ON security_incidents(user_id);
+
+--
+-- PAYMENTS
+-- Logs individual payment transactions for student enrollments.
+--
+CREATE TABLE payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    enrollment_id UUID NOT NULL REFERENCES student_enrollments(id) ON DELETE CASCADE,
+    student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    amount NUMERIC(10, 2) NOT NULL,
+    payment_method TEXT NOT NULL CHECK (payment_method IN ('cash', 'mobile_money', 'card', 'bank_transfer')),
+    transaction_id TEXT, -- For Mobile Money or Card transactions
+    payment_date TIMESTAMPTZ DEFAULT now(),
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_payments_enrollment_id ON payments(enrollment_id);

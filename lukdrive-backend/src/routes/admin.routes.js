@@ -46,5 +46,25 @@ router.post('/enrollments', adminController.enrollStudent);
 // @access  Private (Admin)
 router.get('/programs', adminController.getPrograms);
 
+// @route   POST api/admin/enroll
+// @desc    Enroll a student in a program
+// @access  Private (Admin)
+router.post('/enroll', adminController.enrollStudent);
+
+// @route   POST api/admin/payments
+// @desc    Log a payment for an enrollment
+// @access  Private (Admin)
+router.post('/payments', adminController.logPayment);
+
+// @route   GET api/admin/student/:id
+// @desc    Get full details for a single student
+// @access  Private (Admin)
+router.get('/student/:id', adminController.getStudentDetails);
+
+// @route   PUT api/admin/subscription
+// @desc    Update school's subscription plan
+// @access  Private (Admin)
+router.put('/subscription', adminController.updateSubscription);
+
 
 module.exports = router;

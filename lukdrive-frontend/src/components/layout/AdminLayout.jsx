@@ -1,12 +1,13 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, CreditCard } from 'lucide-react';
 import UserNav from './UserNav';
 
 const navLinks = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Courses', href: '/admin/courses', icon: BookOpen },
+  { name: 'Subscription', href: '/admin/subscription', icon: CreditCard },
 ];
 
 const AdminLayout = () => {

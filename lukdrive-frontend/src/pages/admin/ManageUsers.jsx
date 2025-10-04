@@ -6,6 +6,7 @@ import Table from '../../components/common/Table';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import UserForm from '../../components/admin/UserForm';
+import EnrollmentForm from '../../components/admin/EnrollmentForm';
 import { PlusCircle } from 'lucide-react';
 
 const TABS = ['Students', 'Instructors', 'Admins'];
@@ -13,6 +14,7 @@ const TABS = ['Students', 'Instructors', 'Admins'];
 const ManageUsers = () => {
   const [activeTab, setActiveTab] = useState(TABS[0]);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const queryClient = useQueryClient();
 
@@ -23,11 +25,12 @@ const ManageUsers = () => {
     queryFn: () => adminService.getUsersByRole(role).then(res => res.data),
   });
 
-  const mutationOptions = (successMessage) => ({
+  const mutationOptions = (successMessage, modalToClose = 'user') => ({
     onSuccess: () => {
       toast.success(successMessage);
       queryClient.invalidateQueries(['users', role]);
-      setIsUserModalOpen(false);
+      if (modalToClose === 'user') setIsUserModalOpen(false);
+      if (modalToClose === 'enroll') setIsEnrollModalOpen(false);
       setSelectedUser(null);
     },
     onError: (error) => {
@@ -50,6 +53,11 @@ const ManageUsers = () => {
     ...mutationOptions('User deactivated successfully!'),
   });
 
+  const enrollStudentMutation = useMutation({
+    mutationFn: adminService.enrollStudent,
+    ...mutationOptions('Student enrolled successfully!', 'enroll'),
+  });
+
   const handleFormSubmit = (data) => {
     if (selectedUser) {
       updateUserMutation.mutate({ userId: selectedUser.id, userData: data });
@@ -63,21 +71,51 @@ const ManageUsers = () => {
     setIsUserModalOpen(true);
   };
 
+  const openEnrollModal = (user) => {
+    setSelectedUser(user);
+    setIsEnrollModalOpen(true);
+  };
+
   const handleDeactivate = (userId) => {
     if (window.confirm('Are you sure you want to deactivate this user?')) {
       deactivateUserMutation.mutate(userId);
     }
   };
 
+import { Link } from 'react-router-dom';
+// ... other imports
+
+// Inside the component, before the columns definition
   const columns = useMemo(() => {
-    return [
-      { Header: 'Name', accessor: 'first_name', Cell: ({ row: { original } }) => `${original.first_name} ${original.last_name}` },
+    const baseColumns = [
+      {
+        Header: 'Name',
+        accessor: 'first_name',
+        Cell: ({ row: { original } }) => (
+          <Link to={`/admin/student/${original.id}`} className="text-blue-600 hover:underline">
+            {original.first_name} {original.last_name}
+          </Link>
+        )
+      },
       { Header: 'Email', accessor: 'email' },
       { Header: 'Status', accessor: 'is_active', Cell: ({ row: { original } }) => ( <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${ original.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }`}> {original.is_active ? 'Active' : 'Inactive'} </span> ) },
       { Header: 'Date Added', accessor: 'created_at', Cell: ({ row: { original } }) => new Date(original.created_at).toLocaleDateString() },
-      { Header: 'Actions', accessor: 'actions', Cell: ({ row: { original } }) => ( <div className="space-x-2"> <Button onClick={() => openEditModal(original)} variant="secondary" className="text-xs py-1 px-2">Edit</Button> <Button onClick={() => handleDeactivate(original.id)} variant="danger" className="text-xs py-1 px-2">Deactivate</Button> </div> ) },
     ];
-  }, []);
+
+    let actionButtons = ({ original }) => (
+        <div className="space-x-2">
+            <Button onClick={() => openEditModal(original)} variant="secondary" className="text-xs py-1 px-2">Edit</Button>
+            <Button onClick={() => handleDeactivate(original.id)} variant="danger" className="text-xs py-1 px-2">Deactivate</Button>
+            {role === 'student' && (
+                <Button onClick={() => openEnrollModal(original)} className="text-xs py-1 px-2">Enroll</Button>
+            )}
+        </div>
+    );
+
+    baseColumns.push({ Header: 'Actions', accessor: 'actions', Cell: ({ row }) => actionButtons(row) });
+
+    return baseColumns;
+  }, [role]);
 
   const isMutating = createUserMutation.isPending || updateUserMutation.isPending;
 
@@ -104,6 +142,10 @@ const ManageUsers = () => {
 
       <Modal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} title={selectedUser ? 'Edit User' : 'Create New User'}>
         <UserForm onSubmit={handleFormSubmit} isLoading={isMutating} defaultValues={selectedUser} isEdit={!!selectedUser} role={role} />
+      </Modal>
+
+      <Modal isOpen={isEnrollModalOpen} onClose={() => setIsEnrollModalOpen(false)} title="Enroll Student">
+        {selectedUser && <EnrollmentForm student={selectedUser} onSubmit={enrollStudentMutation.mutate} isLoading={enrollStudentMutation.isPending} />}
       </Modal>
     </div>
   );

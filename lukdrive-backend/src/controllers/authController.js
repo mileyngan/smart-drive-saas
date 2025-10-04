@@ -10,15 +10,46 @@ exports.registerSchool = async (req, res) => {
   if (!schoolName || !ministryCode || !adminFirstName || !email || !password) {
     return res.status(400).json({ message: 'Please provide all required fields.' });
   }
+
+  let schoolData;
   try {
-    const { data: schoolData, error: schoolError } = await supabase.from('schools').insert({ name: schoolName, ministry_code: ministryCode, subscription_plan: 'trial', subscription_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) }).select().single();
-    if (schoolError) { if (schoolError.code === '23505') { return res.status(409).json({ message: 'A school with this Ministry Code already exists.' }); } throw schoolError; }
+    // Create the school first
+    const { data: newSchool, error: schoolError } = await supabase.from('schools').insert({ name: schoolName, ministry_code: ministryCode }).select().single();
+    if (schoolError) {
+        if (schoolError.code === '23505') { return res.status(409).json({ message: 'A school with this Ministry Code already exists.' }); }
+        throw schoolError;
+    }
+    schoolData = newSchool;
+
+    // Create the trial subscription for the new school
+    const trialEnds = new Date();
+    trialEnds.setDate(trialEnds.getDate() + 7);
+    const { error: subError } = await supabase.from('subscriptions').insert({ school_id: schoolData.id, plan: 'trial', status: 'active', trial_ends_at: trialEnds });
+    if (subError) throw subError;
+
+    // Create the admin user for the school
     const password_hash = await hashPassword(password);
     const { data: userData, error: userError } = await supabase.from('users').insert({ first_name: adminFirstName, last_name: adminLastName, email, password_hash, role: 'admin', school_id: schoolData.id }).select('id, first_name, last_name, email, role').single();
-    if (userError) { await supabase.from('schools').delete().match({ id: schoolData.id }); if (userError.code === '23505') { return res.status(409).json({ message: 'A user with this email already exists.' }); } throw userError; }
+    if (userError) {
+        if (userError.code === '23505') {
+            // Rollback school creation if user exists
+            await supabase.from('schools').delete().match({ id: schoolData.id });
+            return res.status(409).json({ message: 'A user with this email already exists.' });
+        }
+        throw userError;
+    }
+
     const token = generateToken({ id: userData.id, email: userData.email, role: userData.role, school_id: schoolData.id });
     res.status(201).json({ message: 'School and admin registered successfully!', token, user: userData, school: schoolData });
-  } catch (error) { console.error('Registration Error:', error); res.status(500).json({ message: 'Server error during registration process.' }); }
+
+  } catch (error) {
+    // Cleanup if something went wrong after school creation
+    if (schoolData && schoolData.id) {
+        await supabase.from('schools').delete().match({ id: schoolData.id });
+    }
+    console.error('Registration Error:', error);
+    res.status(500).json({ message: 'Server error during registration process.' });
+  }
 };
 
 // @desc    Authenticate user & get token
@@ -26,10 +57,28 @@ exports.login = async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) { return res.status(400).json({ message: 'Please provide an email and password.' }); }
   try {
-    const { data: user, error: userError } = await supabase.from('users').select('*, school:schools(id, name, subscription_plan)').eq('email', email).single();
+    const { data: user, error: userError } = await supabase
+        .from('users')
+        .select(`
+            *,
+            school:schools (
+                *,
+                subscription:subscriptions(*)
+            )
+        `)
+        .eq('email', email)
+        .single();
+
     if (userError || !user) { return res.status(401).json({ message: 'Invalid credentials.' }); }
+
     const isMatch = await comparePassword(password, user.password_hash);
     if (!isMatch) { return res.status(401).json({ message: 'Invalid credentials.' }); }
+
+    // Simplify the subscription data
+    if (user.school && user.school.subscription && user.school.subscription.length > 0) {
+        user.school.subscription = user.school.subscription[0];
+    }
+
     const token = generateToken({ id: user.id, email: user.email, role: user.role, school_id: user.school_id });
     delete user.password_hash;
     res.status(200).json({ message: 'Logged in successfully!', token, user });

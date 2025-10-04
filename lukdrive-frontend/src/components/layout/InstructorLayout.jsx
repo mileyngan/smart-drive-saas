@@ -1,11 +1,12 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { Users, LayoutDashboard } from 'lucide-react';
+import { Users, LayoutDashboard, UserCircle } from 'lucide-react';
 import UserNav from './UserNav';
 
 const navLinks = [
   { name: 'Dashboard', href: '/instructor/dashboard', icon: LayoutDashboard },
   { name: 'Students', href: '/instructor/students', icon: Users },
+  { name: 'My Profile', href: '/instructor/profile', icon: UserCircle },
 ];
 
 const InstructorLayout = () => {

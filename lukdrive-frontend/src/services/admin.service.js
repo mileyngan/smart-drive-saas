@@ -24,6 +24,22 @@ const getPrograms = () => {
     return api.get('/admin/programs');
 };
 
+const enrollStudent = (enrollmentData) => {
+  return api.post('/admin/enroll', enrollmentData);
+};
+
+const logPayment = (paymentData) => {
+  return api.post('/admin/payments', paymentData);
+};
+
+const getStudentDetails = (studentId) => {
+  return api.get(`/admin/student/${studentId}`);
+};
+
+const updateSubscription = (plan) => {
+  return api.put('/admin/subscription', { plan });
+};
+
 const adminService = {
   getDashboardStats,
   getUsersByRole,
@@ -31,6 +47,10 @@ const adminService = {
   updateUser,
   deactivateUser,
   getPrograms,
+  enrollStudent,
+  logPayment,
+  getStudentDetails,
+  updateSubscription,
 };
 
 export default adminService;
